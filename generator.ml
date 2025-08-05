@@ -3,6 +3,7 @@ open Display
 (* Rule: Le cantus firmus est avant tout un chant de la voix. Ainsi, la simplicité est de mise.
 Les petits intervalles sont plus simple à chanter que les grands. *)
 
+
 type cantus_context = {
   cantus: int array; (* make it a (degree, note, interval) list? *)
   len: int;
@@ -18,6 +19,16 @@ let e_mode = [1; 2; 2; 2; 1; 2; 2]
 let f_mode = [2; 2; 2; 1; 2; 2; 1]
 let g_mode = [2; 2; 1; 2; 2; 1; 2]
 let a_mode = [2; 1; 2; 2; 1; 2; 2] (* mode mineur naturel *)
+
+
+let get_mode = function
+  | "C" | "c" -> major_scale
+  | "D" | "d" -> d_mode
+  | "E" | "e" -> e_mode
+  | "F" | "f" -> f_mode
+  | "G" | "g" -> g_mode
+  | "A" | "a" -> a_mode
+  | _ -> major_scale (* fix this *)
 
 (* [make_scale_h] takes a list containing the tone and a list containing the mode contents *)
 let rec make_scale_h acc mode = 
@@ -74,8 +85,10 @@ Rule: Cantus firmus always starts by the tonic of the tonality. *)
 let first_note cantus_context =
   Random.self_init ();
   let cc = cantus_context in
+  let tonic = 0 in
   let first = Random.bool () in 
-  if first then cc.cantus.(0) <- cc.domain.(0) else cc.cantus.(0) <- cc.domain.(0) + 12;
+  if first then cc.cantus.(tonic) <- cc.domain.(0) else cc.cantus.(tonic) <- cc.domain.(0) + 12;
+  Printf.printf "Tonic is: %d\n" cc.cantus.(tonic);
   cc
 
 (* [last_note] takes a cantus array and returns it updated with a randomly chosen last note. 
@@ -83,8 +96,10 @@ Rule: Cantus firmus always end on the tonic of the tonality *)
 let last_note cantus_context = 
   Random.self_init ();
   let cc = cantus_context in
+  let final = cc.len - 1 in
   let last = Random.bool () in
-  if last then cc.cantus.(cc.len - 1) <- cc.cantus.(0) else cc.cantus.(cc.len - 1) <- cc.domain.(0) + 12; 
+  if last then cc.cantus.(final) <- cc.cantus.(0) else cc.cantus.(final) <- cc.domain.(0) + 12; 
+  Printf.printf "Final note is: %d\n" cc.cantus.(final);
   cc
 
 (* [second_to_last] takes a scale and returns the possible second to last note in the cantus 
@@ -98,6 +113,7 @@ let second_to_last cantus_context =
   let seventh = cc.domain.(6) in
   if cc.cantus.(end_note) = tonique then cc.cantus.(penultimate) <- second
   else cc.cantus.(penultimate) <- seventh;
+  Printf.printf "Penultimate note is: %d\n" cc.cantus.(penultimate);
   cc
 
 (* [move_check n1 n2] checks the interval between [n1] and [n2] 
@@ -130,13 +146,13 @@ let record_shape arr cursor n1 n2 =
 let rec body_notes_h cantus_context (counters: int * int list * int list * int) : cantus_context =
   let cc = cantus_context in
   let (acc, c_cursor, sh_cursor, redir) = counters in
+  let body_end_note = cc.len - 3 in
 
-  if redir <> 0 then (cc.cantus.(List.hd c_cursor) <- redir; Printf.printf "Redirected note: %d\n" redir;
+  if acc = body_end_note then cc
+  else if redir <> 0 then (cc.cantus.(List.hd c_cursor) <- redir; Printf.printf "Redirected note: %d\n" redir;
     body_notes_h cc (acc + 1, (increase_cursor c_cursor), (increase_cursor sh_cursor), 0) 
   ) else (
-
       let (domain_degree, next_note) = generate_note cc.domain in
-      let body_end_note = cc.len - 3 in
       let current_note = cc.cantus.(List.hd c_cursor -1) in (* Do we need another note? Current_note always compare to 60 *)
       let result = if current_note = 0
         then move_check cc.cantus.(0) next_note    
@@ -146,7 +162,7 @@ let rec body_notes_h cantus_context (counters: int * int list * int list * int) 
       | None -> body_notes_h cc counters
       | Some (interval, next_note) -> 
 
-          Printf.printf "Current Note: %d, Next Note: %d Interval: %d Domain Degree: %d\n" current_note next_note interval domain_degree;
+          Printf.printf "C Cursor is: %d, Current Note: %d, Next Note: %d Interval: %d Domain Degree: %d\n" (List.hd c_cursor) current_note next_note interval domain_degree;
           (* comparison between current note and next in wrong as current note is always 60 - the not yet modified one. *)
           let redirected_note =
           if abs interval > 5 then 
@@ -154,7 +170,7 @@ let rec body_notes_h cantus_context (counters: int * int list * int list * int) 
           else 0 in 
 
           cc.cantus.(List.hd c_cursor) <- next_note; cc.shape.(List.hd sh_cursor) <- interval; 
-          if acc = body_end_note then cc 
+          if acc = body_end_note then cc (* NEEDED here? *)
           else body_notes_h cc (acc + 1, (increase_cursor c_cursor), (increase_cursor sh_cursor), redirected_note)
       )
 
