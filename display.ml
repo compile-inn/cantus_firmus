@@ -1,5 +1,19 @@
 (* [show_note] converts the midi representation of a note to a traditional alphabetic representation *)
-let show_note n = 
+let get_octave n =
+  match n with
+  | oct when oct > 0 && oct < 12 -> "-1"
+  | oct when oct >= 12 && oct < 24 -> "0"
+  | oct when oct >= 24 && oct < 36 -> "1"
+  | oct when oct >= 36 && oct < 48 -> "2"
+  | oct when oct >= 48 && oct < 60 -> "3"
+  | oct when oct >= 60 && oct < 72 -> "4"
+  | oct when oct >= 72 && oct < 84 -> "5"
+  | oct when oct >= 84 && oct < 96 -> "6"
+  | oct when oct >= 96 && oct < 108 -> "7"
+  | oct when oct >= 108 && oct < 120 -> "8"
+  | _ -> failwith "out of range"
+  
+let get_note n =
   match (n mod 12) with
   | 0 -> "C"
   | 1 -> "C#"
@@ -14,6 +28,9 @@ let show_note n =
   | 10 -> "A#"
   | 11 -> "B"
   | _ -> failwith "not in the scale"
+
+let show_note n =
+  get_note n ^ get_octave n
 
 let cantus_to_list cantus =
   Array.to_list cantus
