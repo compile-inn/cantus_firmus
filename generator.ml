@@ -3,7 +3,6 @@ open Display
 (* Rule: Le cantus firmus est avant tout un chant de la voix. Ainsi, la simplicité est de mise.
 Les petits intervalles sont plus simple à chanter que les grands. *)
 
-
 type cantus_context = {
   cantus: int array; (* make it a (degree, note, interval) list? *)
   len: int;
@@ -20,15 +19,49 @@ let f_mode = [2; 2; 2; 1; 2; 2; 1]
 let g_mode = [2; 2; 1; 2; 2; 1; 2]
 let a_mode = [2; 1; 2; 2; 1; 2; 2] (* mode mineur naturel *)
 
+let alteration = function
+  | "#" -> 1
+  | "b" -> -1
+  | _ -> 0
 
-let get_mode = function
-  | "C" | "c" -> major_scale
+let note_from_str = function
+  | "C" -> 0
+  | "D" -> 1
+  | "E" -> 2
+  | "F" -> 3
+  | "G" -> 4
+  | "A" -> 5
+  | "B" -> 6
+  | _ -> failwith "Not a note"
+
+let octave_from_str = function
+  | "-1" -> 0
+  | "0" -> 12
+  | "1" -> 24
+  | "2" -> 36
+  | "3" -> 48
+  | "4" -> 60
+  | "5" -> 72
+  | "6" -> 84
+  | "7" -> 96
+  | "8" -> 108
+  | _ -> failwith "Octave out of range"
+
+let get_tone note alter oct =
+  note_from_str note + alteration alter + octave_from_str oct
+
+let get_mode = function (* add a function that remove caps from a string *)
+  | "C" | "c" | "major" | "Major" -> major_scale
   | "D" | "d" -> d_mode
   | "E" | "e" -> e_mode
   | "F" | "f" -> f_mode
   | "G" | "g" -> g_mode
   | "A" | "a" -> a_mode
-  | _ -> major_scale (* fix this *)
+  | _ -> major_scale (* fix this by adding a mode type *)
+
+let make_char_list str =
+  List.of_seq(String.to_seq str) 
+  (* from char list, match list to get the note, then get the octave *)
 
 (* [make_scale_h] takes a list containing the tone and a list containing the mode contents *)
 let rec make_scale_h acc mode = 
