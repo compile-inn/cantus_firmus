@@ -1,4 +1,5 @@
 open Generator
+open InputHandler
 
 let () = 
   Printf.printf "Select the cantus tone (C, D, E, F, G, A, B):";
@@ -17,10 +18,8 @@ let () =
   Printf.printf "Select the cantus length in full notes (range: 8 to 16):";
   flush stdout;
   let len = read_int () in
-
-  let c = make_cantus_context len (get_tone tone alter octave) (get_mode mode) in
+  
+  let tone = get_tone tone alter octave in
+  let mode = get_mode mode in
+  let c = make_cantus_context len tone mode in
   cantufier c
-
-  (* Add get_note to translate readable note into midi note:
-  C4 -> 60
-  Add support for flat alterations and scale: C4b *)
