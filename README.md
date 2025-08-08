@@ -7,6 +7,7 @@ This little program generates cantus firmus - fixed melodies used in counterpoin
 
 ## Done
 - Add get_note to translate readable note into midi note: C4 -> 60
+- Add rule to avoid repeting notes succesively.
 
 ## To be fixed
 - Add support for flat alterations and scale: C4b

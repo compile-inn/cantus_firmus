@@ -1,4 +1,5 @@
 (* [show_note] converts the midi representation of a note to a traditional alphabetic representation *)
+(* Ordre des bemols: Si, Mi, La, Ré, Sol, Do, Fa *)
 let get_octave n =
   match n with
   | oct when oct > 0 && oct < 12 -> "-1"

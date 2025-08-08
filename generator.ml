@@ -54,7 +54,7 @@ let init_cantus len ton =
 let make_cantus_context len ton mode =
   let cantus = init_cantus len ton in
   let domain = make_cantus_domain ton mode in
-  let shape = Array.make len 0 in (* use to be len - 1*)
+  let shape = Array.make len 0 in (* 200 is a place holder out of midi range *)
   let context = {
     cantus = cantus;
     len = len;
@@ -112,25 +112,27 @@ let second_to_last cantus_context =
 let move_check current_note next_note =
   let interval = current_note - next_note in
     match interval with
-    | 0 | 3 | 4 | 5 | 7 | 8 | 9 | 12 
+    | 3 | 4 | 5 | 7 | 8 | 9 | 12 (* remove 0 to remove repeats...*)
     | -3 | -4 | -5 | -7 | -8 | -9 | -12 -> Some (interval, next_note) 
     | _ -> None
 
 (* [redirect] redirects the melody in the opposite direction 
 by moving one degree away from the leap note.*)
-let redirect interval domain domain_degree =
+let redirect_leap interval domain domain_degree =
   if interval < 0 then domain.(domain_degree - 1) else domain.(domain_degree + 1) 
 
 let increase_cursor = function
   | h :: t -> h + 1 :: h :: t
   | [] -> 1 :: []
-  
 
 (* [record_shape] records the interval between a potential note and its precedent in the cantus. 
     The base case is first note - first note -> 0 *)
 let record_shape arr cursor n1 n2 =
   let interval = n1 - n2 in
   arr.(cursor) <- interval
+
+let repetition_bool note_to_check c_cursor cc =
+  if cc.cantus.(List.hd c_cursor) = note_to_check then true else false
 
 (* Helper function for [body_notes]. make cursor for domain and for cantus. make function for cursor update. *)
 let rec body_notes_h cantus_context (counters: int * int list * int list * int) : cantus_context =
@@ -141,26 +143,24 @@ let rec body_notes_h cantus_context (counters: int * int list * int list * int) 
   if acc = body_end_note then cc
   else if redir <> 0 then (cc.cantus.(List.hd c_cursor) <- redir; Printf.printf "Redirected note: %d\n" redir;
     body_notes_h cc (acc + 1, (increase_cursor c_cursor), (increase_cursor sh_cursor), 0) 
+   
   ) else (
       let (domain_degree, next_note) = generate_note cc.domain in
-      let current_note = cc.cantus.(List.hd c_cursor -1) in (* Do we need another note? Current_note always compare to 60 *)
-      let result = if current_note = 0
+      let current_note = cc.cantus.(List.hd c_cursor -1) in
+      let result = if current_note = 0 (* should be -1 or another number out of midi range*)
         then move_check cc.cantus.(0) next_note    
         else move_check current_note next_note in
       
         match result with 
       | None -> body_notes_h cc counters
       | Some (interval, next_note) -> 
-
-          (* Printf.printf "C Cursor is: %d, Current Note: %d, Next Note: %d Interval: %d Domain Degree: %d\n" (List.hd c_cursor) current_note next_note interval domain_degree; *)
-          (* comparison between current note and next in wrong as current note is always 60 - the not yet modified one. *)
           let redirected_note =
-          if abs interval > 5 then 
-            redirect interval cc.domain domain_degree
-          else 0 in 
+          if abs interval > 5 then
+            redirect_leap interval cc.domain domain_degree
+          else 0 in (* 0 is wrong. It should be out of midi note range *)
 
           cc.cantus.(List.hd c_cursor) <- next_note; cc.shape.(List.hd sh_cursor) <- interval; 
-          if acc = body_end_note then cc (* NEEDED here? *)
+          if acc = body_end_note then cc
           else body_notes_h cc (acc + 1, (increase_cursor c_cursor), (increase_cursor sh_cursor), redirected_note)
       )
 
