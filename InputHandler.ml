@@ -29,7 +29,8 @@ let alteration = function
   | _ -> 0
 
 let get_tone note alter oct =
-  note_from_str note + alteration alter + octave_from_str oct
+  let tone = note_from_str note + alteration alter + octave_from_str oct in
+  tone
 
 let get_mode = function (* add a function that remove caps from a string *)
   | "C" | "c" | "major" | "Major" -> major_scale
@@ -39,7 +40,3 @@ let get_mode = function (* add a function that remove caps from a string *)
   | "G" | "g" -> g_mode
   | "A" | "a" -> a_mode
   | _ -> major_scale (* fix this by adding a mode type *)
-
-let make_char_list str =
-  List.of_seq(String.to_seq str) 
-  (* from char list, match list to get the note, then get the octave *)

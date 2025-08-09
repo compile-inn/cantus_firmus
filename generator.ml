@@ -8,7 +8,6 @@ type cantus_context = {
   len: int;
   domain: int array;
   shape: int array;
-  redirected: int list;
 }
 
 (* Available modes *)
@@ -60,7 +59,6 @@ let make_cantus_context len ton mode =
     len = len;
     domain = domain;
     shape = shape;
-    redirected = [0]
   } in context
 
 (* This randomly chooses a note from the cantus domain.
