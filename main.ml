@@ -19,7 +19,7 @@ let () =
   flush stdout;
   let len = read_int () in
   
-  let tone = get_tone tone alter octave in
+  let (tone, alteration) = get_tone tone alter octave in
   let mode = get_mode mode in
-  let c = make_cantus_context len tone mode in
+  let c = make_cantus_context len tone alteration mode in
   cantufier c

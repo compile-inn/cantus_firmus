@@ -56,8 +56,10 @@ let cantus_to_list cantus =
   Array.to_list cantus
 
 (* [show_scale] convers the midi representation of a scale into its readable representation *)
-let show_scale s =
-  if List.hd s mod 12 = 5 then
+let show_scale s alter =
+  if alter = -1 then
+    List.map show_flat_note s
+  else if List.hd s mod 12 = 5 then
     List.map show_flat_note s
   else List.map show_note s
 
@@ -71,6 +73,6 @@ let print_notes lst =
   let notes = print_notes_h "" lst in print_endline notes (* Adds a new line after printing. *)
   
 (* [print_cantus] takes a cantus and print its readable representation. *)
-let print_cantus cantus =
+let print_cantus cantus alter =
   let c = cantus_to_list cantus in
-  print_notes (show_scale c)
+  print_notes (show_scale c alter)

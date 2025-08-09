@@ -6,6 +6,7 @@ Les petits intervalles sont plus simple à chanter que les grands. *)
 type cantus_context = {
   cantus: int array; (* make it a (degree, note, interval) list? *)
   len: int;
+  tone_alter: int;
   domain: int array;
   shape: int array;
 }
@@ -19,7 +20,8 @@ let g_mode = [2; 2; 1; 2; 2; 1; 2]
 let a_mode = [2; 1; 2; 2; 1; 2; 2] (* mode mineur naturel *)
 
 
-(* [make_scale_h] takes a list containing the tone and a list containing the mode contents *)
+(* [make_scale_h] takes a list containing the tone and a list containing the mode contents
+   and returns a scale that becomes the domain of the cantus to be generated. *)
 let rec make_scale_h acc mode = 
   match mode with
   | [] -> acc
@@ -32,9 +34,9 @@ let rec make_scale_h acc mode =
 let make_scale note mode =
   let acc = note::[] in let scale = List.rev (make_scale_h acc mode) in scale
 
-(* creates an ordered set of notes accessible by their degree index *)
-let indexed_scale lst =
-  Array.of_list lst
+(* Creates an ordered set of notes accessible by their degree index *)
+let index_scale scale =
+  Array.of_list scale
 
 (* Domain from which the cantus notes will be selected. 
   [make_cantus_domain] takes a [ton] and a [mode] and returns the scale in the array form.
@@ -42,7 +44,7 @@ let indexed_scale lst =
  *)
 let make_cantus_domain ton mode =
   let scale = make_scale ton mode in
-  indexed_scale scale
+  index_scale scale
 
 (* Array from which the cantus is created note by note. 
    [init_cantus] take a cantus length and a tone. It returns an array of length between 8 and 16 tone.
@@ -50,19 +52,23 @@ let make_cantus_domain ton mode =
 let init_cantus len ton = 
   let cantus = Array.make len ton in
   (cantus)
-let make_cantus_context len ton mode =
+
+(* [make_cantus_context] creates a record containing all useful information
+pertaining to the generation and understanding of the cantus firmus. 
+Ex: [alter] arg is a marker telling the program to display flat or sharp representation of the midi note - Db or C# for 62. *)
+let make_cantus_context len ton alter mode =
   let cantus = init_cantus len ton in
   let domain = make_cantus_domain ton mode in
-  let shape = Array.make len 0 in (* 200 is a place holder out of midi range *)
+  let shape = Array.make len 0 in
   let context = {
     cantus = cantus;
     len = len;
+    tone_alter = alter;
     domain = domain;
     shape = shape;
   } in context
 
-(* This randomly chooses a note from the cantus domain.
-   [generate_note] takes a [scale] array and returns a random note from that parameter *)
+(* [generate_note] randomly chooses a potential note from the cantus domain to be filter later. *)
 let generate_note domain = 
   Random.self_init ();
   let domain_degree = Random.int_in_range ~min:0 ~max:7 in
@@ -104,9 +110,9 @@ let second_to_last cantus_context =
   (* Printf.printf "Penultimate note is: %d\n" cc.cantus.(penultimate); *)
   cc
 
-(* [move_check n1 n2] checks the interval between [n1] and [n2] 
-    where [n1] is a note in the cantus and [n2] a potential successor.
-    The function returns [Some n2] if the interval is consonnant, [None] if not. *)
+(* [move_check current_note next_note] checks the interval between [n1] and [n2] 
+    where [current_note] is a note in the cantus and [next_note] a potential successor.
+    The function returns [Some next_note] if the interval is consonnant, [None] if not. *)
 let move_check current_note next_note =
   let interval = current_note - next_note in
     match interval with
@@ -128,9 +134,6 @@ let increase_cursor = function
 let record_shape arr cursor n1 n2 =
   let interval = n1 - n2 in
   arr.(cursor) <- interval
-
-let repetition_bool note_to_check c_cursor cc =
-  if cc.cantus.(List.hd c_cursor) = note_to_check then true else false
 
 (* Helper function for [body_notes]. make cursor for domain and for cantus. make function for cursor update. *)
 let rec body_notes_h cantus_context (counters: int * int list * int list * int) : cantus_context =
@@ -166,11 +169,14 @@ let rec body_notes_h cantus_context (counters: int * int list * int list * int) 
 let body_notes cantus_context =
   body_notes_h cantus_context (0, [1], [0], 0) (* acc; c_cursor; sh_cursor, redirected note *)
 
+(* [printer] prints the generated cantus firmus to the command line in readable format,
+i.e., notes instead of their midi number representations. *)
 let printer cantus_context =
   let c = cantus_context.cantus in
-  print_cantus c
+  let alter = cantus_context.tone_alter in
+  print_cantus c alter
 
-(* [cantufier] takes a cantus context and generates a complete cantus. *)
+(* [cantufier] takes a cantus context, generates a complete cantus and prints it. *)
 let cantufier cantus_context =
   cantus_context 
   |> first_note

@@ -29,8 +29,9 @@ let alteration = function
   | _ -> 0
 
 let get_tone note alter oct =
-  let tone = note_from_str note + alteration alter + octave_from_str oct in
-  tone
+  let alter = alteration alter in
+  let tone = note_from_str note + alter + octave_from_str oct in
+  (tone, alter)
 
 let get_mode = function (* add a function that remove caps from a string *)
   | "C" | "c" | "major" | "Major" -> major_scale
